@@ -1,6 +1,6 @@
 ---
 name: generate-react-monorepo-boilerplate
-description: Create a production-ready React monorepo boilerplate from scratch with TypeScript, React 18, MobX, TanStack React Query, TanStack Router, Vite, Vitest, Cypress, OpenAPI client scaffolding, workspace packages, docs, git hooks, and CI. Use when the user asks to generate, scaffold, bootstrap, or set up a React monorepo, a multi-package SPA, or a large-scale TypeScript React project with shared common/tooling packages.
+description: Create a production-ready React monorepo boilerplate from scratch with TypeScript, React 18, MobX, TanStack React Query, TanStack Router, Base UI, Vite, Vitest, Cypress, OpenAPI client scaffolding, workspace packages, docs, git hooks, and CI. Use when the user asks to generate, scaffold, bootstrap, or set up a React monorepo, a multi-package SPA, or a large-scale TypeScript React project with shared common/tooling packages.
 ---
 
 # Generate React Monorepo Boilerplate
@@ -43,7 +43,7 @@ If only the project name is provided, generate with conservative defaults: `npm`
 
 Create a workspace with:
 
-- `client`: React 18 SPA with Vite, TanStack Router, React Query, MobX stores, Cypress component testing, and Vitest.
+- `client`: React 18 SPA with Vite, TanStack Router, React Query, MobX stores, Base UI, Cypress component testing, and Vitest.
 - `common`: shared types, helpers, domain entities, feature flag constants, OpenAPI specs, and API generation placeholders.
 - `tooling`: dev proxy and workspace utilities.
 - `.github/workflows`: lint, test, build, and optional deploy workflow stubs.
@@ -54,6 +54,9 @@ Create a workspace with:
 
 - Use strict TypeScript from the start.
 - Keep MobX for local/client state and React Query for server/cache state.
+- Use TanStack Router for app navigation and keep route definitions in `client/src/routes`.
+- Use Base UI from `@base-ui/react` for accessible starter UI primitives.
+- Structure the app shell with `Header`, `Sidebar`, and reusable page layout components.
 - Use hash routing by default for static hosting compatibility.
 - Use `@/` for `client/src` and `@common/` for `common/src`.
 - Prefer OxLint and OxFmt-style commands for fast local checks.

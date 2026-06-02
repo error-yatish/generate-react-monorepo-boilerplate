@@ -52,6 +52,7 @@ def create_project(args: argparse.Namespace) -> Path:
         "client/src/app/explore",
         "client/src/app/settings",
         "client/src/components",
+        "client/src/components/layout",
         "client/src/configuration",
         "client/src/contexts",
         "client/src/hooks",
@@ -59,6 +60,7 @@ def create_project(args: argparse.Namespace) -> Path:
         "client/src/queries",
         "client/src/root",
         "client/src/routes",
+        "client/src/router",
         "client/src/stores/StoreRoot",
         "client/src/styles",
         "client/src/types",
@@ -125,6 +127,7 @@ def create_project(args: argparse.Namespace) -> Path:
             "test:cy": "cypress run --component --config-file ../cypress.config.ts"
         },
         "dependencies": {
+            "@base-ui/react": "^1.5.0",
             "@emotion/react": "^11.11.4",
             "@tanstack/react-query": "^5.40.0",
             "@tanstack/react-router": "^1.35.0",
@@ -154,8 +157,8 @@ def create_project(args: argparse.Namespace) -> Path:
             "build:openapi": "echo \"Add specs to common/src/specs before generating clients\""
         },
         "dependencies": {
+            "@kubb/cli": "^2.23.0",
             "@kubb/core": "^2.23.0",
-            "@kubb/openapi": "^2.23.0",
             "zod": "^3.23.8"
         },
         "devDependencies": {"typescript": "^5.4.5"}
@@ -306,19 +309,199 @@ export class StoreFlags extends StoreBase {
 }
 """)
 
-    write(root / "client/src/app/home/HomePage.tsx", """
-export function HomePage() {
+    write(root / "client/src/components/layout/Header.tsx", """
+import { Button } from '@base-ui/react/button';
+import { Link } from '@tanstack/react-router';
+
+export function Header() {
   return (
-    <main>
-      <h1>React monorepo starter</h1>
-      <p>Replace this page with product-specific content.</p>
+    <header className="app-header">
+      <Link className="brand-link" to="/">
+        React Monorepo
+      </Link>
+      <div className="header-actions">
+        <Button className="ghost-button">Docs</Button>
+        <Button className="primary-button">Deploy</Button>
+      </div>
+    </header>
+  );
+}
+""")
+
+    write(root / "client/src/components/layout/Sidebar.tsx", """
+import { Link } from '@tanstack/react-router';
+
+const items = [
+  { to: '/', label: 'Home' },
+  { to: '/explore', label: 'Explore' },
+  { to: '/settings', label: 'Settings' },
+] as const;
+
+export function Sidebar() {
+  return (
+    <aside className="app-sidebar">
+      <nav aria-label="Main navigation">
+        {items.map((item) => (
+          <Link
+            activeProps={{ className: 'sidebar-link active' }}
+            className="sidebar-link"
+            key={item.to}
+            to={item.to}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+    </aside>
+  );
+}
+""")
+
+    write(root / "client/src/components/layout/Page.tsx", """
+import type { ReactNode } from 'react';
+
+type PageProps = {
+  actions?: ReactNode;
+  children: ReactNode;
+  eyebrow?: string;
+  title: string;
+};
+
+export function Page({ actions, children, eyebrow, title }: PageProps) {
+  return (
+    <main className="page">
+      <div className="page-heading">
+        <div>
+          {eyebrow ? <p className="page-eyebrow">{eyebrow}</p> : null}
+          <h1>{title}</h1>
+        </div>
+        {actions ? <div className="page-actions">{actions}</div> : null}
+      </div>
+      {children}
     </main>
   );
 }
 """)
 
-    if args.examples:
-        write(root / "client/src/app/explore/ExplorePage.tsx", """
+    write(root / "client/src/components/layout/AppFrame.tsx", """
+import { Outlet } from '@tanstack/react-router';
+import { Header } from './Header';
+import { Sidebar } from './Sidebar';
+
+export function AppFrame() {
+  return (
+    <div className="app-frame">
+      <Header />
+      <div className="app-body">
+        <Sidebar />
+        <Outlet />
+      </div>
+    </div>
+  );
+}
+""")
+
+    write(root / "client/src/router/root.tsx", """
+import { createRootRoute } from '@tanstack/react-router';
+import { AppFrame } from '@/components/layout/AppFrame';
+
+export const rootRoute = createRootRoute({
+  component: AppFrame,
+});
+""")
+
+    write(root / "client/src/router/router.ts", """
+import { createHashHistory, createRouter } from '@tanstack/react-router';
+import { exploreRoute } from '@/routes/explore';
+import { homeRoute } from '@/routes/home';
+import { settingsRoute } from '@/routes/settings';
+import { rootRoute } from './root';
+
+const routeTree = rootRoute.addChildren([homeRoute, exploreRoute, settingsRoute]);
+
+export const router = createRouter({
+  history: createHashHistory(),
+  routeTree,
+});
+
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router;
+  }
+}
+""")
+
+    write(root / "client/src/routes/home.tsx", """
+import { createRoute } from '@tanstack/react-router';
+import { HomePage } from '@/app/home/HomePage';
+import { rootRoute } from '@/router/root';
+
+export const homeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/',
+  component: HomePage,
+});
+""")
+
+    write(root / "client/src/routes/explore.tsx", """
+import { createRoute } from '@tanstack/react-router';
+import { ExplorePage } from '@/app/explore/ExplorePage';
+import { rootRoute } from '@/router/root';
+
+export const exploreRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/explore',
+  component: ExplorePage,
+});
+""")
+
+    write(root / "client/src/routes/settings.tsx", """
+import { createRoute } from '@tanstack/react-router';
+import { SettingsPage } from '@/app/settings/SettingsPage';
+import { rootRoute } from '@/router/root';
+
+export const settingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/settings',
+  component: SettingsPage,
+});
+""")
+
+    write(root / "client/src/app/home/HomePage.tsx", """
+import { Button } from '@base-ui/react/button';
+import { Link } from '@tanstack/react-router';
+import { Page } from '@/components/layout/Page';
+
+export function HomePage() {
+  return (
+    <Page
+      actions={
+        <Link className="primary-button" to="/explore">
+          Explore routes
+        </Link>
+      }
+      eyebrow="Workspace"
+      title="React monorepo starter"
+    >
+      <section className="panel-grid">
+        <article className="panel">
+          <h2>Routing</h2>
+          <p>TanStack Router provides typed routes with hash history for static hosting.</p>
+        </article>
+        <article className="panel">
+          <h2>State</h2>
+          <p>React Query owns server cache while MobX stores handle local UI state.</p>
+          <Button className="ghost-button">Base UI action</Button>
+        </article>
+      </section>
+    </Page>
+  );
+}
+""")
+
+    write(root / "client/src/app/explore/ExplorePage.tsx", """
+import { Page } from '@/components/layout/Page';
+
 const rows = [
   { id: 'vm-001', name: 'Exposure overview', severity: 'High' },
   { id: 'vm-002', name: 'Asset inventory', severity: 'Medium' },
@@ -327,9 +510,8 @@ const rows = [
 
 export function ExplorePage() {
   return (
-    <main>
-      <h1>Explore</h1>
-      <table>
+    <Page eyebrow="Examples" title="Explore">
+      <table className="data-table">
         <tbody>
           {rows.map((row) => (
             <tr key={row.id}>
@@ -339,29 +521,38 @@ export function ExplorePage() {
           ))}
         </tbody>
       </table>
-    </main>
+    </Page>
   );
 }
 """)
-        write(root / "client/src/app/settings/SettingsPage.tsx", """
+    write(root / "client/src/app/settings/SettingsPage.tsx", """
+import { Button } from '@base-ui/react/button';
+import { Page } from '@/components/layout/Page';
+
 export function SettingsPage() {
   return (
-    <main>
-      <h1>Settings</h1>
-      <label>
-        <input type="checkbox" defaultChecked />
-        Enable example feature flag
-      </label>
-    </main>
+    <Page
+      actions={<Button className="ghost-button">Save changes</Button>}
+      eyebrow="Configuration"
+      title="Settings"
+    >
+      <section className="settings-panel">
+        <label>
+          <input type="checkbox" defaultChecked />
+          Enable example feature flag
+        </label>
+      </section>
+    </Page>
   );
 }
 """)
 
     write(root / "client/src/root/App.tsx", """
-import { HomePage } from '@/app/home/HomePage';
+import { RouterProvider } from '@tanstack/react-router';
+import { router } from '@/router/router';
 
 export function App() {
-  return <HomePage />;
+  return <RouterProvider router={router} />;
 }
 """)
 
@@ -392,19 +583,200 @@ createRoot(document.getElementById('root') as HTMLElement).render(
 
     write(root / "client/src/styles/global.css", """
 :root {
-  color: #1f2937;
-  background: #f8fafc;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #172033;
+  background: #eef2f6;
+  font-family: "IBM Plex Sans", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
 }
 
-main {
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.app-frame {
+  min-height: 100vh;
+}
+
+.app-header {
+  align-items: center;
+  background: #ffffff;
+  border-bottom: 1px solid #d8dee8;
+  display: flex;
+  height: 64px;
+  justify-content: space-between;
+  padding: 0 24px;
+}
+
+.brand-link {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.app-body {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  min-height: calc(100vh - 64px);
+}
+
+.app-sidebar {
+  background: #172033;
+  color: #dce5f2;
+  padding: 20px 16px;
+}
+
+.app-sidebar nav {
+  display: grid;
+  gap: 8px;
+}
+
+.sidebar-link {
+  border-radius: 8px;
+  color: #bac7d8;
+  display: block;
+  padding: 10px 12px;
+}
+
+.sidebar-link.active,
+.sidebar-link:hover {
+  background: #243149;
+  color: #ffffff;
+}
+
+.page {
   margin: 0 auto;
-  max-width: 960px;
-  padding: 48px 24px;
+  max-width: 1120px;
+  padding: 40px 32px;
+  width: 100%;
+}
+
+.page-heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.page-eyebrow {
+  color: #5f6f87;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin: 0 0 6px;
+  text-transform: uppercase;
+}
+
+.page h1 {
+  font-size: 2rem;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.page-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.primary-button,
+.ghost-button {
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 9px 14px;
+}
+
+.primary-button {
+  background: #166534;
+  border: 1px solid #166534;
+  color: #ffffff;
+}
+
+.ghost-button {
+  background: #ffffff;
+  border: 1px solid #b8c3d3;
+  color: #172033;
+}
+
+.panel-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.panel,
+.settings-panel {
+  background: #ffffff;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.panel h2 {
+  font-size: 1rem;
+  margin: 0 0 8px;
+}
+
+.panel p {
+  color: #5f6f87;
+  line-height: 1.6;
+}
+
+.data-table {
+  background: #ffffff;
+  border: 1px solid #d8dee8;
+  border-collapse: collapse;
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.data-table td {
+  border-bottom: 1px solid #e5e9f0;
+  padding: 14px 16px;
+}
+
+@media (max-width: 760px) {
+  .app-header {
+    height: auto;
+    padding: 16px;
+  }
+
+  .app-body {
+    grid-template-columns: 1fr;
+  }
+
+  .app-sidebar {
+    padding: 12px 16px;
+  }
+
+  .app-sidebar nav,
+  .header-actions,
+  .page-heading {
+    flex-wrap: wrap;
+  }
+
+  .app-sidebar nav,
+  .panel-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page {
+    padding: 28px 16px;
+  }
 }
 """)
 
