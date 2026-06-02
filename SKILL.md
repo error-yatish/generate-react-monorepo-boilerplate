@@ -1,6 +1,6 @@
 ---
 name: generate-react-monorepo-boilerplate
-description: Create a production-ready React monorepo boilerplate from scratch with TypeScript, React 18, MobX, TanStack React Query, TanStack Router, Vite, Vitest, Cypress, OpenAPI client scaffolding, workspace packages, docs, git hooks, and CI. Use when the user asks to generate, scaffold, bootstrap, or set up a React monorepo, a service-vm-ui-style frontend workspace, a multi-package SPA, or a large-scale TypeScript React project with shared common/tooling packages.
+description: Create a production-ready React monorepo boilerplate from scratch with TypeScript, React 18, MobX, TanStack React Query, TanStack Router, Vite, Vitest, Cypress, OpenAPI client scaffolding, workspace packages, docs, git hooks, and CI. Use when the user asks to generate, scaffold, bootstrap, or set up a React monorepo, a multi-package SPA, or a large-scale TypeScript React project with shared common/tooling packages.
 ---
 
 # Generate React Monorepo Boilerplate
