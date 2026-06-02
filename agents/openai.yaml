@@ -1,0 +1,4 @@
+interface:
+  display_name: "React Monorepo Boilerplate"
+  short_description: "Scaffold a production React monorepo"
+  default_prompt: "Use $generate-react-monorepo-boilerplate to scaffold a production-ready React monorepo."
